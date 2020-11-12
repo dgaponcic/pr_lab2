@@ -1,26 +1,27 @@
 import socket
 import selectors
-import protocolv2 as p
-from tls_protocol import ProtocolTLS
+# import protocolv2 as p
+# from tls_protocol import ProtocolTLS
+from encryption_protocol.server_mixin import ServerMixin
 
 sel = selectors.DefaultSelector()
 HOST = "127.0.0.1"
 
 if __name__ == "__main__":
-  ssl_p = ProtocolTLS(HOST, 10000)
-  sel.register(ssl_p.sock, selectors.EVENT_READ, data=None)
+  encryption_p = ServerMixin(HOST, 10000)
+  sel.register(encryption_p, selectors.EVENT_READ, data=None)
 
   while True:
     try:
       readable = sel.select(timeout=None)
       for key, _ in readable:
-        if key.fileobj == ssl_p.sock:
-          new_conn = ssl_p.accept(ssl_p.sock, HOST)
+        if key.fileobj == encryption_p:
+          new_conn = encryption_p.accept(HOST)
           sel.register(new_conn, selectors.EVENT_READ, data=None)
         else:
-          request = ssl_p.read(key.fileobj)
+          request = key.fileobj.read()
           print("read req", request)
           res = request + " HEHE"
-          ssl_p.write(res, key.fileobj)
+          key.fileobj.write(res)
     except Exception as e:
       pass

@@ -1,27 +1,19 @@
 from cryptography.fernet import Fernet
-from encryption import Encryption
-import protocolv2 as p
+from encryption_protocol.encryption import Encryption
+import transport_protocol.protocolv2 as p
 import random
-from generate_math import generate_public_keys, generate_private, calculate_key
+from encryption_protocol.key_generation_math import generate_public_keys, generate_private, calculate_key
 
 
 class ProtocolTLS:
-  def __init__(self, host, port):
-    self.sock = p.init(host, port)
+  def __init__(self, sock):
+    self.sock = sock
+
 
   def read_g_p_keys(self, sock):
     public_key_p = int(p.read(sock))
     public_key_g = int(p.read(sock))
     return public_key_g, public_key_p
-    
-
-  def accept(self, sock, host):
-    new_sock = p.accept(sock, host)
-    req = p.read(new_sock)
-    if req == "TLS":
-      key = self.get_server_key(new_sock)
-      self.encryption = Encryption(key)
-      return new_sock
 
 
   def get_client_key(self, sock):
@@ -46,23 +38,21 @@ class ProtocolTLS:
     return calculate_key(public_key_generated2, public_key_p, private)
 
 
-  def connect(self, sock, host, port):
-    p.connect(sock, host, port)
-    p.write("TLS", sock)
-    key = self.get_client_key(sock)
-    print(key)
-    self.encryption = Encryption(key)
-
-
   def generate_key(self, min_nb, max_nb):
     return random.randint(min_nb, max_nb)
 
 
-  def read(self, receiver):
+  def read(self):
+    receiver = self.sock
     val = p.read(receiver).encode("utf-8")
     return self.encryption.decrypt_data(val)
 
 
-  def write(self, val, sender):
+  def write(self, val):
+    sender = self.sock
     val2 = self.encryption.encrypt_data(val)
     p.write(val2.decode("utf-8"), sender)
+
+
+  def fileno(self):
+    return self.sock.fileno()
