@@ -1,6 +1,6 @@
-import math
 from numpy.random import randint
 import sympy
+import math
 
 def prim_roots(modulo):
     coprime_set = {num for num in range(1, modulo) if math.gcd(num, modulo) == 1}

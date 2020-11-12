@@ -1,11 +1,7 @@
-import socket
-import json
-import random
-import hashlib
-# import select
-# from threading import Thread
-from transport_protocol.socket_wrapper import SocketWrapper
 from transport_protocol.request_handler import is_valid, make_payload, get_payload
+from transport_protocol.socket_wrapper import SocketWrapper
+import socket
+import random
 
 def init(host, port):
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

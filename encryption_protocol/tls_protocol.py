@@ -1,8 +1,8 @@
-from cryptography.fernet import Fernet
+from encryption_protocol.key_generation_math import generate_public_keys, generate_private, calculate_key
 from encryption_protocol.encryption import Encryption
 import transport_protocol.protocolv2 as p
+from cryptography.fernet import Fernet
 import random
-from encryption_protocol.key_generation_math import generate_public_keys, generate_private, calculate_key
 
 
 class ProtocolTLS:

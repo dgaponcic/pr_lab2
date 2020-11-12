@@ -1,14 +1,13 @@
-import socket
-import selectors
-# import protocolv2 as p
-# from tls_protocol import ProtocolTLS
 from encryption_protocol.server_mixin import ServerMixin
+import selectors
+import socket
 
 sel = selectors.DefaultSelector()
 HOST = "127.0.0.1"
+PORT = 10000
 
 if __name__ == "__main__":
-  encryption_p = ServerMixin(HOST, 10000)
+  encryption_p = ServerMixin(HOST, PORT)
   sel.register(encryption_p, selectors.EVENT_READ, data=None)
 
   while True:

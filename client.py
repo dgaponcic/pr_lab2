@@ -1,6 +1,5 @@
-import socket
-# from encryption_protocol.tls_protocol import ProtocolTLS
 from encryption_protocol.client_mixin import ClientMixin 
+import socket
 
 HOST = "127.0.0.1"
 SERVER_PORT = 10000
