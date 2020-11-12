@@ -1,5 +1,5 @@
 import math
-import random
+from numpy.random import randint
 import sympy
 
 def prim_roots(modulo):
@@ -9,7 +9,7 @@ def prim_roots(modulo):
 
 def generate_public_g(public_p):
   primitive_primes = prim_roots(public_p)
-  index = random.randint(0, len(primitive_primes) - 1)
+  index = randint(0, high=len(primitive_primes) - 1)
   return primitive_primes[index]
 
 def generate_public_keys(min_val, max_val):
@@ -18,7 +18,7 @@ def generate_public_keys(min_val, max_val):
   return public_p, public_g
 
 def generate_private(min_val, max_val):
-  return random.randint(min_val, max_val)
+  return randint(min_val, high=max_val)
 
 def calculate_key(public_g, public_p, private):
   return public_g ** private % public_p
