@@ -1,8 +1,8 @@
 from encryption_protocol.client_mixin import ClientMixin 
 
 class Client:
-    def __init__(self, client_host, phone_host, phone_port):
-        encryption_p = ClientMixin(client_host)
+    def __init__(self, phone_host, phone_port, client_host, client_port=0):
+        encryption_p = ClientMixin(client_host, client_port)
         encryption_p.connect(phone_host, phone_port)
         encryption_p.write("client connection")
         self.sock = encryption_p
@@ -21,4 +21,3 @@ class Client:
     
     def get_reply(self):
         return self.sock.read()
-

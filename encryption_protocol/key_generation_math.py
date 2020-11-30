@@ -1,5 +1,7 @@
 from numpy.random import randint
-import sympy
+from sympy import randprime
+from sympy.abc import a, b, c
+from sympy.parsing.sympy_parser import parse_expr
 import math
 
 def prim_roots(modulo):
@@ -13,7 +15,7 @@ def generate_public_g(public_p):
   return primitive_primes[index]
 
 def generate_public_keys(min_val, max_val):
-  public_p = sympy.randprime(min_val, max_val)
+  public_p = randprime(min_val, max_val)
   public_g = generate_public_g(public_p)
   return public_p, public_g
 
@@ -21,4 +23,5 @@ def generate_private(min_val, max_val):
   return randint(min_val, high=max_val)
 
 def calculate_key(public_g, public_p, private):
-  return public_g ** private % public_p
+  sympy_exp = parse_expr('(a ** b) % c')
+  return int(sympy_exp.evalf(subs={a:public_g, b:private, c:public_p}))

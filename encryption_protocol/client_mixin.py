@@ -1,6 +1,6 @@
 from encryption_protocol.tls_protocol import ProtocolTLS
 from encryption_protocol.encryption import Encryption
-import transport_protocol.protocolv2 as p
+import transport_protocol.protocol as p
 
 
 class ClientMixin(ProtocolTLS):

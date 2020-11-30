@@ -1,6 +1,6 @@
 from encryption_protocol.key_generation_math import generate_public_keys, generate_private, calculate_key
 from encryption_protocol.encryption import Encryption
-import transport_protocol.protocolv2 as p
+import transport_protocol.protocol as p
 from cryptography.fernet import Fernet
 import random
 
@@ -49,9 +49,13 @@ class ProtocolTLS:
 
 
   def write(self, val):
-    sender = self.sock
-    val2 = self.encryption.encrypt_data(val)
-    p.write(val2.decode("utf-8"), sender)
+    try:
+      sender = self.sock
+      val2 = self.encryption.encrypt_data(val)
+      p.write(val2.decode("utf-8"), sender)
+    except Exception as e:
+      print("m")
+      raise e
 
 
   def fileno(self):

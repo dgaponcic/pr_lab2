@@ -6,25 +6,24 @@ HOST = "127.0.0.1"
 PORT = int(sys.argv[1])
 
 if __name__ == "__main__":
-    phone = Phone(HOST, PORT)
-    inputs = [ phone, phone.phone_client ]
-    outputs = [ ]
+  phone = Phone(HOST, PORT)
+  inputs = [ phone, phone.outbound ]
+  outputs = []    
 
-    while True:
-        readable, writable, exceptional = select.select(inputs, outputs, inputs)
-        
-        for readable in readable:
-            if readable == phone and (not phone.phone_server or not phone.client):
-                conn = phone.accept(HOST)
-                inputs.append(conn)
-            
-            elif readable == phone.client:
-                phone.client_incoming()
+  while True:
+    readable, writable, exceptional = select.select(inputs, outputs, inputs)
+    
+    for readable in readable:
+      if readable == phone and (not phone.inbound or not phone.client):
+        conn = phone.accept(HOST)
+        inputs.append(conn)
+      
+      elif readable == phone.client:
+        phone.client_incoming()
 
-
-            elif readable == phone.phone_server:
-                phone.get_reply()
-            
-            elif readable == phone.phone_client:
-                phone.get_reply()
+      elif readable == phone.inbound:
+        phone.get_reply()
+      
+      elif readable == phone.outbound:
+        phone.get_reply()
 
