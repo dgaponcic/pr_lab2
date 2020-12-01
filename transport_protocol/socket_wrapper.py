@@ -6,8 +6,11 @@ class SocketWrapper:
   def fileno(self):
     return self.sock.fileno()
 
-  def recvfrom(self, buffer):
-    return self.sock.recvfrom(buffer)
+  def recvfrom(self, buffer, *args):
+    if args:
+      return self.sock.recvfrom(buffer, args[0])
+    else:
+      return self.sock.recvfrom(buffer)
 
   def sendto(self, msg, addr):
     self.sock.sendto(msg, addr)

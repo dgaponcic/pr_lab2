@@ -42,7 +42,7 @@ def read(receiver):
     raw_payload, addr = receiver.recvfrom(1024)
     data, index = get_payload(raw_payload)
     
-    if is_valid(raw_payload) and random.random() > 0.7:
+    if is_valid(raw_payload) and random.random() > 0.3:
       receiver.sendto(f'ACK|{index}'.encode("utf-8"), addr)
       print("sending ack")
       if index == 0:
@@ -59,14 +59,32 @@ def write(val, sender):
   msgs = split2chunks(val)
   data2send = create_packets(msgs)
 
-  for data in data2send:
-    sender.sendto(data, receiver)
-    payload, recv_addres = sender.recvfrom(1024, )
+  window = 1
+  pointer = 0
+  waiting = 0
+  tresh = 6
 
-    while b"NACK" in payload:
-      index = get_nack_index(payload)
-      sender.sendto(data2send[index], receiver)
-      payload, recv_addres = sender.recvfrom(1024)
+  while pointer < len(data2send) or waiting != 0:
+    print("window value: " + str(window))
+    while waiting < window and pointer < len(data2send):
+      sender.sendto(data2send[pointer], receiver)
+      waiting += 1
+      pointer += 1
+
+    try:
+      while True:
+          payload, addr = sender.recvfrom(1024, socket.MSG_DONTWAIT)
+          if b"NACK" in payload:
+            index = get_nack_index(payload)
+            sender.sendto(data2send[index], receiver)
+            window *= 2 / 3
+
+          elif b"ACK" in payload:
+            waiting -= 1
+            window = window + 1 if window < tresh else window + 0.5
+
+    except Exception as e:
+      pass
         
 
 def split2chunks(val):
@@ -85,4 +103,5 @@ def create_packets(msgs):
 
 
 def join_chunks(received):
+  received.sort(key=lambda chunk: chunk[1])
   return "".join([x[0] for x in received])

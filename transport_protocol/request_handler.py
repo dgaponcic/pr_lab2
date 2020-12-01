@@ -1,7 +1,6 @@
 import hashlib
 
 def is_valid(payload):
-  print(payload)
   data, control_hash, index = payload.decode("utf-8").split("|")
 
   return control_hash == hashlib.md5(data.encode("utf-8")).hexdigest()
