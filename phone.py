@@ -21,9 +21,5 @@ if __name__ == "__main__":
       elif readable == phone.client:
         phone.client_incoming()
 
-      elif readable == phone.inbound:
+      elif readable == phone.inbound or readable == phone.outbound:
         phone.get_reply()
-      
-      elif readable == phone.outbound:
-        phone.get_reply()
-
