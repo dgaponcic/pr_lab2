@@ -19,6 +19,7 @@ def state_dialing(client):
   elif ans == "rejected":
     print("Your call was rejected")
 
+
 def state_idle(client):
   rcv = client.get_reply()
   if rcv == "calling":
@@ -29,11 +30,12 @@ def state_idle(client):
         reply = client.get_reply()
         print(reply)
         if reply == "call ended":
-          break
+          return
         data = input("")
         client.reply(data)
     else:
       client.reply("rejected")
+
 
 def dispatch_states(client):
   while True:
@@ -47,4 +49,3 @@ def dispatch_states(client):
 if __name__ == "__main__":
   client = Client(phone_host=HOST, phone_port=PHONE_PORT, client_host=HOST)
   dispatch_states(client)
-        

@@ -7,17 +7,22 @@ class Client:
     encryption_p.write("client connection")
     self.sock = encryption_p
 
+
   def pickup(self):
     self.sock.write("dialing")
     number = ""
     digit = input("Introduce the digit: ")
+
     while digit != "stop":
-        self.sock.write(digit)
-        digit = input("Next digit: ")
+      self.sock.write(digit)
+      digit = input("Next digit: ")
+      
     self.sock.write("stop")
+
 
   def reply(self, msg):
     self.sock.write(msg)
+
 
   def get_reply(self):
     return self.sock.read()

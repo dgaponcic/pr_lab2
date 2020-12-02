@@ -1,10 +1,9 @@
 from transport_protocol.request_handler import is_valid, make_payload, get_packet, get_packet_index
 from transport_protocol.socket_wrapper import SocketWrapper
-import socket
-import random
-import uuid 
-import errno
 from contextlib import suppress
+import random
+import socket
+import uuid 
 
 def init(host, port):
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -32,6 +31,7 @@ def accept(sock, host):
 
     return SocketWrapper(new_conn, sender)
 
+
 def get_stream_id(receiver):
   while True:
     with suppress(BlockingIOError):
@@ -41,7 +41,9 @@ def get_stream_id(receiver):
       if is_valid(payload) and packet["type"] == "INIT":
         stream_id = packet["data"]
         receiver.sendto(make_payload(stream_id, "INIT", "ACK", 0), addrs)
+
         return stream_id
+
 
 def get_stream_length(stream_id, receiver):
     while True:
@@ -50,7 +52,9 @@ def get_stream_length(stream_id, receiver):
         packet = get_packet(payload)
         if is_valid(payload) and packet["type"] == "LENGTH":
           receiver.sendto(make_payload(stream_id, "LENGTH", "ACK", 0), addrs)
+
           return int(packet["data"])
+
 
 def read(receiver):
   received = []
@@ -80,6 +84,7 @@ def read(receiver):
 
   return join_chunks(received)
 
+
 def init_write(stream_id, sender, receiver):
   sender.sendto(make_payload(stream_id, "INIT", stream_id, 0), receiver)
   while True:
@@ -91,6 +96,7 @@ def init_write(stream_id, sender, receiver):
     except:
       sender.sendto(make_payload(stream_id, "INIT", stream_id, 0), receiver)
       continue
+
 
 def init_stream_len(stream_id, length, sender, receiver):
   sender.sendto(make_payload(stream_id, "LENGTH", str(length), 0), receiver)
@@ -128,19 +134,19 @@ def write(val, sender):
 
     with suppress(BlockingIOError):
       while True:
-          payload, addr = sender.recvfrom(1024, socket.MSG_DONTWAIT)
-          packet = get_packet(payload)
+        payload, addr = sender.recvfrom(1024, socket.MSG_DONTWAIT)
+        packet = get_packet(payload)
 
-          if packet["type"] == "CONTROL" and packet["data"] == "NACK":
-            index = packet["index"]
-            sender.sendto(data2send[index], receiver)
-            window *= 2 / 3
+        if packet["type"] == "CONTROL" and packet["data"] == "NACK":
+          index = packet["index"]
+          sender.sendto(data2send[index], receiver)
+          window *= 2 / 3
 
-          elif packet["type"] == "CONTROL" and packet["data"] == "ACK":
-            index = packet["index"]
-            if index in waiting:
-              waiting.remove(index)
-            window = window + 1 if window < ssthresh else window + 0.5
+        elif packet["type"] == "CONTROL" and packet["data"] == "ACK":
+          index = packet["index"]
+          if index in waiting:
+            waiting.remove(index)
+          window = window + 1 if window < ssthresh else window + 0.5
 
 
 def is_index_in_chunks(chunks, index):

@@ -26,19 +26,24 @@ class Phone:
         self._client = conn
 
     elif req == "incoming call":
-        self._client.write("calling")
-        answer = self._client.read()
-        if answer == "accepted":
-            self._inbound = conn
-            self.active = self._inbound
-            conn.write("accepted")
-        else:
-            conn.write("rejected")
+      self.incoming_call(conn)
 
     elif req == "end call":
       self._inbound = None
       self._client.write("call ended")
+
     return conn
+
+
+  def incoming_call(self, conn):
+    self._client.write("calling")
+    answer = self._client.read()
+    if answer == "accepted":
+        self._inbound = conn
+        self.active = self._inbound
+        conn.write("accepted")
+    else:
+        conn.write("rejected")
 
 
   def get_number(self):
@@ -50,6 +55,7 @@ class Phone:
     
     return number
 
+
   def call(self, number):
     try:
       addr = spravocinic[number]
@@ -58,8 +64,6 @@ class Phone:
       self._outbound.write("incoming call")
     except BlockingIOError:
       self._client.write("an error occured, try later")
-
-
 
 
   def client_incoming(self):
@@ -73,14 +77,17 @@ class Phone:
 
   def get_reply(self, type=None):
     data = self.active.read()
-    print("data", data)
+
     if type == "client" and data == "rejected":
         self._client.write("call rejected")
+
     elif type == "client" and data == "accepted":
         self._client.write("call accepted")  
+
     elif data == "end call":
       self._inbound = None
-      self._client.write("call ended")   
+      self._client.write("call ended")  
+       
     else:
         self._client.write(data)
 

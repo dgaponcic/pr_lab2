@@ -4,6 +4,7 @@ def is_valid(payload):
   packet = payload.decode("utf-8").split("|")
   data = packet[2]
   control_hash = packet[3]
+  
   return control_hash == hashlib.md5(data.encode("utf-8")).hexdigest()
 
 
