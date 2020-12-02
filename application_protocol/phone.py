@@ -1,17 +1,29 @@
 from encryption_protocol.server_mixin import ServerMixin
 from encryption_protocol.client_mixin import ClientMixin
-import select
 
-spravocinic = {"0010": {"host": "127.0.0.1", "port": 10001}}
 
 class Phone:
-  def __init__(self, host, port):
+  def __init__(self, host, port, phone_lookup):
     self.host = host
     self.sock = ServerMixin(host, port)
     self._client = None
     self._inbound = None
     self._outbound = ClientMixin(host)
     self.active = None
+    self.phone_lookup = phone_lookup
+
+
+  @property
+  def inbound(self):
+    return self._inbound
+
+  @property
+  def outbound(self):
+    return self._outbound
+
+  @property
+  def client(self):
+    return self._client
 
 
   def fileno(self):
@@ -58,7 +70,7 @@ class Phone:
 
   def call(self, number):
     try:
-      addr = spravocinic[number]
+      addr = self.phone_lookup.get_addr(number)
       self._outbound.connect(addr["host"], addr["port"])
       self.active = self._outbound
       self._outbound.write("incoming call")
@@ -87,19 +99,6 @@ class Phone:
     elif data == "end call":
       self._inbound = None
       self._client.write("call ended")  
-       
+
     else:
         self._client.write(data)
-
-
-  @property
-  def inbound(self):
-    return self._inbound
-
-  @property
-  def outbound(self):
-    return self._outbound
-
-  @property
-  def client(self):
-    return self._client

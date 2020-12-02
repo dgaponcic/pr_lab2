@@ -1,3 +1,4 @@
+from phone_lookup import PhoneLookup
 from application_protocol.phone import Phone
 import select
 import sys
@@ -6,9 +7,9 @@ HOST = "127.0.0.1"
 PORT = int(sys.argv[1])
 
 if __name__ == "__main__":
-  phone = Phone(HOST, PORT)
+  phone = Phone(HOST, PORT, PhoneLookup())
   inputs = [ phone, phone.outbound ]
-  outputs = []    
+  outputs = []
 
   while True:
     readable, writable, exceptional = select.select(inputs, outputs, inputs)
