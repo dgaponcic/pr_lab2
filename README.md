@@ -18,6 +18,16 @@ When a client has requested to connect, a new port is opened for the connection.
 #### Packet splitting and in order delivery 
 The information is splitted into packets and every packet has a index in order to reassemble the message when read.
 
+Each packet has the following structure:
+stream_id | packet_type | payload | hash | index
+
+* stream_id - used to identify the stream the packet is part of
+* packet_type - cn be DATA, CONTROL, LENGTH based on the purpose of the packet
+* payload - the data the packet is carrying
+* hash - the md5 hash of the payload to verify that it was not corrupted
+* index - the index of the packet in the stream
+
+
 #### Congestion Control
 To ensure congestion control used Slow Start method.
 Window variable denotes how many packets can be sent without getting an acknowledgement. The initial value of window is 1. For every ACK
@@ -66,3 +76,4 @@ TODO: demo
 ## Extra notes
 Improvements and/or Known bugs:
 * Vulnerable to SYN flood
+* Use crc instead of md5
