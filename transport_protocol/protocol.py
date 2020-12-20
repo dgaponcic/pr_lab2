@@ -5,6 +5,8 @@ import random
 import socket
 import uuid 
 
+past_ids = []
+
 def init(host, port):
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -14,22 +16,26 @@ def init(host, port):
 
 
 def connect(sock, host, port):
-  sock.sendto(b'SYN', (host, port))
-  response, addr = sock.recvfrom(1024)
+  while True:
+    with suppress(BlockingIOError):
+      sock.sendto(make_payload(0, "CONN", "SYN", 0), (host, port))
+      payload, addr = sock.recvfrom(1024)
+      response = get_packet(payload)
+      if response["type"] == "CONN" and response["data"] == "OK":
+        sock.connection = addr
+        return
   
-  if response == b"OK":
-    sock.connection = addr
-    
-
+  
 def accept(sock, host):
-  data, sender = sock.recvfrom(1024)
+  with suppress(BlockingIOError):
+    data, sender = sock.recvfrom(1024)
+    packet = get_packet(data)
+    if packet["type"] == "CONN" and packet["data"] == 'SYN':
+      new_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+      new_conn.bind((host, 0))
+      new_conn.sendto(make_payload(0, "CONN", "OK", 0), sender)
 
-  if data == b'SYN':
-    new_conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    new_conn.bind((host, 0))
-    new_conn.sendto(b'OK', sender)
-
-    return SocketWrapper(new_conn, sender)
+      return SocketWrapper(new_conn, sender)
 
 
 def get_stream_id(receiver):
@@ -37,7 +43,6 @@ def get_stream_id(receiver):
     with suppress(BlockingIOError):
       payload, addrs = receiver.recvfrom(1024)
       packet = get_packet(payload)
-
       if is_valid(payload) and packet["type"] == "INIT":
         stream_id = packet["data"]
         receiver.sendto(make_payload(stream_id, "INIT", "ACK", 0), addrs)
@@ -46,14 +51,16 @@ def get_stream_id(receiver):
 
 
 def get_stream_length(stream_id, receiver):
-    while True:
-      with suppress(BlockingIOError):
-        payload, addrs = receiver.recvfrom(1024)
-        packet = get_packet(payload)
-        if is_valid(payload) and packet["type"] == "LENGTH":
-          receiver.sendto(make_payload(stream_id, "LENGTH", "ACK", 0), addrs)
+  while True:
+    with suppress(BlockingIOError):
+      payload, addrs = receiver.recvfrom(1024)
+      packet = get_packet(payload)
+      if is_valid(payload) and packet["type"] == "INIT" and packet["data"] == stream_id:
+        receiver.sendto(make_payload(stream_id, "INIT", "ACK", 0), addrs)
+      if is_valid(payload) and packet["type"] == "LENGTH":
+        receiver.sendto(make_payload(stream_id, "LENGTH", "ACK", 0), addrs)
 
-          return int(packet["data"])
+        return int(packet["data"])
 
 
 def read(receiver):
@@ -61,27 +68,30 @@ def read(receiver):
   max_index = -1
   stream_id = get_stream_id(receiver)
   total_len = get_stream_length(stream_id, receiver)
-
+  addr = None
   while len(received) != total_len:
     try:
       raw_payload, addr = receiver.recvfrom(1024)
       packet = get_packet(raw_payload)
       index = packet["index"]
 
-      if packet["stream_id"] == stream_id and packet["type"] == "DATA" and is_valid(raw_payload) and random.random() > 0.3:
+      if packet["stream_id"] == stream_id and packet["type"] == "LENGTH":
+        receiver.sendto(make_payload(stream_id, "LENGTH", "ACK", 0), addr)
+      elif packet["stream_id"] == stream_id and packet["type"] == "DATA" and is_valid(raw_payload):
         receiver.sendto(make_payload(stream_id, "CONTROL", "ACK", index), addr)
         if index > max_index:
           max_index = index
 
         if not is_index_in_chunks(received, index):
           received.append((packet["data"], index))
-      else:
+      elif packet["stream_id"] == stream_id and packet["type"] == "DATA":
         receiver.sendto(make_payload(stream_id, "CONTROL", "NACK", index), addr)
-    except:
+    except Exception as e:
       for i in range(max_index + 1):
         if not is_index_in_chunks(received, i):
           receiver.sendto(make_payload(stream_id, "CONTROL", "NACK", i), addr)
 
+  past_ids.append(stream_id)
   return join_chunks(received)
 
 
@@ -93,7 +103,9 @@ def init_write(stream_id, sender, receiver):
       packet = get_packet(resp)
       if packet["type"] == "INIT" and packet["data"] == "ACK":
         break
-    except:
+      elif packet["stream_id"] in past_ids:
+        sender.sendto(make_payload(packet["stream_id"], "CONTROL", "ACK", packet["index"]), addr)
+    except BlockingIOError:
       sender.sendto(make_payload(stream_id, "INIT", stream_id, 0), receiver)
       continue
 
@@ -107,8 +119,8 @@ def init_stream_len(stream_id, length, sender, receiver):
       packet = get_packet(resp)
       if packet["type"] == "LENGTH" and packet["data"] == "ACK":
         break
-    except:
-      sender.sendto(make_payload(stream_id, "LENGTH", str(len(data2send)), 0), receiver)
+    except BlockingIOError:
+      sender.sendto(make_payload(stream_id, "LENGTH", str(length), 0), receiver)
       continue
 
 
@@ -126,9 +138,13 @@ def write(val, sender):
   init_stream_len(stream_id, len(data2send), sender, receiver)
 
   while pointer < len(data2send) or len(waiting) != 0:
+    
+    if pointer == len(data2send):
+      for i in waiting:
+        sender.sendto(data2send[i], receiver)
+
     while len(waiting) < window and pointer < len(data2send):
-      if pointer != 3 and pointer != 5 and pointer != 15:
-        sender.sendto(data2send[pointer], receiver)
+      sender.sendto(data2send[pointer], receiver)
       waiting.add(pointer)
       pointer += 1
 
@@ -136,18 +152,16 @@ def write(val, sender):
       while True:
         payload, addr = sender.recvfrom(1024, socket.MSG_DONTWAIT)
         packet = get_packet(payload)
-
-        if packet["type"] == "CONTROL" and packet["data"] == "NACK":
+        if packet["stream_id"] == stream_id and packet["type"] == "CONTROL" and packet["data"] == "NACK":
           index = packet["index"]
           sender.sendto(data2send[index], receiver)
           window *= 2 / 3
 
-        elif packet["type"] == "CONTROL" and packet["data"] == "ACK":
+        elif packet["stream_id"] == stream_id and packet["type"] == "CONTROL" and packet["data"] == "ACK":
           index = packet["index"]
           if index in waiting:
             waiting.remove(index)
           window = window + 1 if window < ssthresh else window + 0.5
-
 
 def is_index_in_chunks(chunks, index):
   return any(index in chunk for chunk in chunks)
