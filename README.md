@@ -73,6 +73,10 @@ TODO: draw state machine
 ## Demo
 TODO: demo
 
+## Real world testing
+Use Docker in order to emulate a network with packet loss and packet delay.
+In real world there are many corner cases that can crash the application. For more info see branch "docker"
+
 ## Extra notes
 Improvements and/or Known bugs:
 * Vulnerable to SYN flood
