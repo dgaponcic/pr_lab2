@@ -2,14 +2,14 @@
 
 ## Task
 Implement a protocol stack.
-* transport protocol based on UDP
-* session-level security protocol inspired by SSL/TLS
-* application-level protocol
+* a transport protocol based on UDP
+* a session-level security protocol inspired by SSL/TLS
+* an application-level protocol
 
 ## Transport protocol
-Built on UDP sockets.
+The trasport protocol is built on UDP sockets. 
 
-In order to communicate, the client has to connect to some address and the server has to listen for incoming clients and accept them.
+In order to communicate, the client has to connect to an address and the server has to listen for incoming clients and accept them.
 
 When a client has requested to connect, a new port is opened for the connection.
 
@@ -53,7 +53,7 @@ So is the network is congested and we receive NACKs, we send fewer packets, if e
 ```
 
 ## Session level
-Implemented Diffie Helman is used in order to get the private key for 
+Implemented Diffie Hellman in order to compute the private key for 
 encryption (use data sent on network together with some private values and some smart modulo math).
 
 ```
