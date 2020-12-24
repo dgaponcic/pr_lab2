@@ -29,5 +29,5 @@ I use tc in order to corrupt the network.
 * ```tc qdisc add dev eth0 root netem delay 100ms```
 
 
-The application can recover for a loss of packets of up to 7% or a delay of up to 100ms.
+The application can recover for a loss of packets of up to 7% or a delay of up to 100ms, but there can happen unhandled cases.
 
